@@ -34,12 +34,6 @@ namespace Goods.Model
 
         public bool? recommendflag { get; set; }
 
-        [StringLength(2000)]
-        public string images { get; set; }
-
-        [StringLength(2000)]
-        public string buyimages { get; set; }
-
         [StringLength(36)]
         public string recommender { get; set; }
 

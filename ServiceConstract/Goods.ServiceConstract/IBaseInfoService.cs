@@ -80,7 +80,7 @@ namespace Goods.ServiceConstract
             RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json,
             BodyStyle = WebMessageBodyStyle.WrappedRequest)]
         [Description("上传图片后获取图片地址。")]
-        ReturnResult<string> UpdatePictrue(Stream stream);
+        ReturnResult<string> UpdatePictrue(string strBase64);
 
         /// <summary>
         /// 商品点击量自增

@@ -7,6 +7,8 @@ using Goods.DataObject;
 using Goods.Model;
 using Goods.Core;
 using System.IO;
+using System.Drawing;
+using System.Configuration;
 
 namespace Goods.Service
 {
@@ -178,10 +180,14 @@ namespace Goods.Service
                     if (string.IsNullOrEmpty(goodsInfo.id))
                     {
                         goodsInfo.id = Guid.NewGuid().ToString();
+                        goodsInfo.image = ImageUtil.StrToUri(goodsInfo.image, goodsInfo.id + ".jpg");
+                        goodsInfo.buyimage = ImageUtil.StrToUri(goodsInfo.buyimage, goodsInfo.id + "_buy.jpg");
                         GoodsDb.Goods.Add(goodsInfo);
                     }
                     else
                     {
+                        goodsInfo.image = ImageUtil.StrToUri(goodsInfo.image, goodsInfo.id + ".jpg");
+                        goodsInfo.buyimage = ImageUtil.StrToUri(goodsInfo.buyimage, goodsInfo.id + "_buy.jpg");
                         Model.Goods temp = GoodsDb.Goods.First(p => p.id == goodsInfo.id);
                         temp = goodsInfo;
                     }
@@ -204,42 +210,28 @@ namespace Goods.Service
         /// </summary>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public ReturnResult<string> UpdatePictrue(Stream stream)
+        public ReturnResult<string> UpdatePictrue(String strBase64)
         {
             ReturnResult<string> result = new ReturnResult<string>();
+
+            byte[] bt = Convert.FromBase64String(strBase64);
 
             string fileName = Guid.NewGuid().ToString() + ".jpg";
             string savePath = @"D:\GoodsService\";
             string relativePath = @"images\goods\";
             string uploadFolder = savePath + relativePath;
 
-            FileStream targetStream = null;
-            if (!stream.CanRead)
-            {
-                LogWriter.WebLog("上传的文件流不可读！");
-            }
-
-            if (!Directory.Exists(uploadFolder))
-            {
-                Directory.CreateDirectory(uploadFolder);
-            }
             string filePath = Path.Combine(uploadFolder, fileName);
-            using (targetStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                const int bufferLen = 4096;
-                byte[] buffer = new byte[bufferLen];
-                int count = 0;
-                while ((count = stream.Read(buffer, 0, bufferLen)) > 0)
-                {
-                    targetStream.Write(buffer, 0, count);
-                }
-                targetStream.Close();
-                stream.Close();
-            }
+            File.WriteAllBytes(filePath, bt);
+
+            //byte[] buff = System.Text.Encoding.ASCII.GetBytes(strBase64);
+            //MemoryStream ms = new MemoryStream(buff);
+            //Image image = Image.FromStream(ms);
+            //image.Save(filePath);
+            //ms.Close();
 
             result.code = 1;
             result.data = @"http://192.168.10.61:8890/" + relativePath + fileName;
-
             return result;
         }
         /// <summary>
@@ -284,6 +276,10 @@ namespace Goods.Service
 
             return result;
         }
+        #endregion
+
+        #region 公共方法
+
         #endregion
 
     }

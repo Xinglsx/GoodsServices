@@ -43,14 +43,6 @@ namespace Goods.Model
                 .IsUnicode(false);
 
             modelBuilder.Entity<Goods>()
-                .Property(e => e.images)
-                .IsUnicode(false);
-
-            modelBuilder.Entity<Goods>()
-                .Property(e => e.buyimages)
-                .IsUnicode(false);
-
-            modelBuilder.Entity<Goods>()
                 .Property(e => e.recommender)
                 .IsUnicode(false);
 
