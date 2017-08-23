@@ -175,7 +175,14 @@ namespace Goods.Service
                         return result;
                     }
                     //新增用户
-                    Users tempUser = new Users { id = Guid.NewGuid().ToString(), userid = strCode, nickname = strCode, password = password };
+                    Users tempUser = new Users
+                    {
+                        id = Guid.NewGuid().ToString(),
+                        userid = strCode,
+                        nickname = strCode,
+                        password = password,
+                        registertime = DateTime.Now,
+                    };
                     GoodsDb.Users.Add(tempUser);
                     if (GoodsDb.SaveChanges() <= 0)
                     {
@@ -205,9 +212,28 @@ namespace Goods.Service
         /// </summary>
         /// <param name="curPage">获取第几页 默认从0开始</param>
         /// <param name="pageSize">每页个数</param>
+        /// <param name="type">0-保存草稿 1-待审核 2-已审核 9-全部 10-保存草稿+待审核</param>
         /// <returns></returns>
-        public ReturnResult<List<Model.Goods>> GetGoodsList(int curPage, int pageSize)
+        public ReturnResult<List<Model.Goods>> GetGoodsList(int curPage, int pageSize,int type)
         {
+            List<int> states = new List<int>();
+            if (type == 10)
+            {
+                states.Add(0);
+                states.Add(1);
+            }
+            else if (type == 9)
+            {
+                states.Add(0);
+                states.Add(1);
+                states.Add(2);
+                states.Add(3);
+            }
+            else
+            {
+                states.Add(type);
+            }
+
             if (pageSize <= 0) pageSize = 10;//默认取10条
             ReturnResult<List<Model.Goods>> result = new ReturnResult<List<Model.Goods>>();
             try
@@ -215,7 +241,7 @@ namespace Goods.Service
                 using (GoodsEntities GoodsDb = new GoodsEntities())
                 {
                     var query = (from goods in GoodsDb.Goods
-                                 where goods.state == 2
+                                 where states.Contains(goods.state ?? 0)
                                  orderby goods.recommendtime descending
                                  select goods).Skip(curPage * pageSize).Take(pageSize);
                     List<Goods.Model.Goods> tempResult = query.ToList();
@@ -243,13 +269,22 @@ namespace Goods.Service
         /// 保存商品信息
         /// </summary>
         /// <param name="goodsInfo">商品信息</param>
-        /// <param name="image">商品图片</param>
-        /// <param name="buyImage">购买图片</param>
         /// <returns></returns>
         public ReturnResult<bool> SaveGoodsInfo(Model.Goods goodsInfo)
         {
             ReturnResult<bool> result = new ReturnResult<bool>();
-            goodsInfo.recommendtime = DateTime.Now;
+            if(!string.IsNullOrEmpty(goodsInfo.id))//需要修改的数据
+            {
+                if(goodsInfo.state >= 2)
+                {
+                    goodsInfo.audittime = DateTime.Now;
+                }
+                else
+                {
+                    goodsInfo.recommendtime = DateTime.Now;
+                }
+            }
+            
             try
             { 
                 using (GoodsEntities GoodsDb = new GoodsEntities())
@@ -263,10 +298,24 @@ namespace Goods.Service
                     }
                     else
                     {
-                        goodsInfo.image = ImageUtil.StrToUri(goodsInfo.image, goodsInfo.id + ".jpg");
-                        goodsInfo.buyimage = ImageUtil.StrToUri(goodsInfo.buyimage, goodsInfo.id + "_buy.jpg");
+                        //修改的商品，可能已经是地址模式化
+                        if (goodsInfo.image != null && !goodsInfo.image.Contains(".jpg"))
+                        {
+                            goodsInfo.image = ImageUtil.StrToUri(goodsInfo.image, goodsInfo.id + ".jpg");
+                        }
+                        if (goodsInfo.image != null && !goodsInfo.image.Contains("http:"))
+                        {
+                            goodsInfo.buyimage = ImageUtil.StrToUri(goodsInfo.buyimage, goodsInfo.id + "_buy.jpg");
+                        }
                         Model.Goods temp = GoodsDb.Goods.First(p => p.id == goodsInfo.id);
-                        temp = goodsInfo;
+                        temp.state = goodsInfo.state;
+                        temp.image = goodsInfo.image;
+                        temp.buyimage = goodsInfo.buyimage;
+                        temp.recommender = goodsInfo.recommender;
+                        temp.recommendname = goodsInfo.recommendname;
+                        temp.auditname = goodsInfo.auditname;
+                        temp.audituser = goodsInfo.audituser;
+                        temp.audittime = goodsInfo.audittime;
                     }
                     GoodsDb.SaveChanges();
                     result.code = 1;
@@ -282,7 +331,6 @@ namespace Goods.Service
             }
             return result;
         }
-
         /// <summary>
         /// 将上传的图片流转成本地文件并返回文件的地址
         /// </summary>

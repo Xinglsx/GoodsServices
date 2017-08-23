@@ -52,5 +52,7 @@ namespace Goods.Model
 
         [StringLength(64)]
         public string taobao { get; set; }
+
+        public DateTime? registertime { get; set; }
     }
 }
