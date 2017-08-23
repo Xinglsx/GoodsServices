@@ -19,14 +19,19 @@ namespace Goods.Core
         /// <returns></returns>
         public static string StrToUri(String strBase64,string fileName)
         {
-            string imagePath = ConfigurationManager.AppSettings["ImagePath"];
-            string imageUri = ConfigurationManager.AppSettings["ImageUri"];
-
-            string filePath = Path.Combine(imagePath, fileName);
             string result = string.Empty;
+
+            if(string.IsNullOrEmpty(strBase64))
+            {
+                return result;
+            }
+
+            string imagePath = ConfigurationManager.AppSettings["ImagePath"];
+            string Localhost = ConfigurationManager.AppSettings["Localhost"] + @"/images/goods/";
+            string filePath = Path.Combine(imagePath, fileName);
             byte[] bt = Convert.FromBase64String(strBase64);
             File.WriteAllBytes(filePath, bt);
-            result = imageUri + fileName;
+            result = Localhost + fileName;
 
             return result;
         }

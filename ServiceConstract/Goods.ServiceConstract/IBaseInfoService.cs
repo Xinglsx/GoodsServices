@@ -14,6 +14,18 @@ namespace Goods.ServiceConstract
     [ServiceContract]
     public interface IBaseInfoService
     {
+        #region 版本信息
+        /// <summary>
+        /// 获取当前版本信息
+        /// </summary>
+        /// <param name="ipAddress">访问地址</param>
+        /// <returns></returns>
+        [OperationContract]
+        [WebInvoke(UriTemplate = "GetVersionInfo", Method = "GET",
+                   ResponseFormat = WebMessageFormat.Json)]
+        ReturnResult<VersionInfo> GetVersionInfo();
+        #endregion
+
         #region 用户相关
 
         /// <summary>

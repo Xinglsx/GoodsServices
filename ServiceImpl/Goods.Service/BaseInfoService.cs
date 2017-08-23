@@ -22,6 +22,83 @@ namespace Goods.Service
         }
         #endregion
 
+        #region 版本相关
+        /// <summary>
+        /// 获取app版本信息
+        /// </summary>
+        /// <returns></returns>
+        public ReturnResult<VersionInfo> GetVersionInfo()
+        {
+            ReturnResult<VersionInfo> result = new ReturnResult<VersionInfo>();
+            VersionInfo version = new VersionInfo();
+            version.versionNumber = 0;
+            try
+            {
+                //获取txt文件中的版本号和更新内容
+                string[] lines = File.ReadAllLines(GetVersionFilePath());
+                bool isVersionNumber = false;
+                bool isVersion = false;
+                bool isUpdateContent = false;
+                foreach (string line in lines)
+                {
+                    if (isVersionNumber)
+                    {
+                        try
+                        {
+                            version.versionNumber = Convert.ToInt32(line);
+                        }
+                        catch { }//转错不处理
+                        
+                        isVersionNumber = false;
+                    }
+                    else if (isVersion)
+                    {
+                        version.version = line;
+                        isVersion = false;
+                    }
+                    else if (isUpdateContent)
+                    {
+                        version.updateContent += line + "\r\n";
+                    }
+
+                    if (line != string.Empty && line.Contains("VersionNumber"))
+                    {
+                        isVersionNumber = true;
+                    }
+                    if (line != string.Empty && line.Contains("Version"))
+                    {
+                        isVersion = true;
+                    }
+                    if (line != string.Empty && line.Contains("UpdateContent"))
+                    {
+                        isUpdateContent = true;
+                    }
+                }
+                if(string.IsNullOrEmpty(version.version))
+                {
+                    version.version = "1.0.0";
+                }
+                if (string.IsNullOrEmpty(version.updateContent))
+                {
+                    version.updateContent = "优化了主要流程！";
+                }
+                version.downloadAddress = ConfigurationManager.AppSettings["Localhost"] 
+                    + @"/Download/com.mingshu.goods.apk";
+
+                result.data = version;
+                result.code = 1;
+            }
+            catch (Exception ex)
+            {
+                result.code = -1;
+                LogWriter.WebError(ex);
+                result.message = ex.Message;
+                return result;
+            }
+            return result;
+        }
+        #endregion
+
         #region 用户相关
         /// <summary>
         /// 验证用户登录信息，登录名支持用户名、邮箱、手机号。
@@ -139,7 +216,7 @@ namespace Goods.Service
                 {
                     var query = (from goods in GoodsDb.Goods
                                  where goods.state == 2
-                                 orderby goods.audittime descending
+                                 orderby goods.recommendtime descending
                                  select goods).Skip(curPage * pageSize).Take(pageSize);
                     List<Goods.Model.Goods> tempResult = query.ToList();
                     if (tempResult == null || tempResult.Count == 0)
@@ -199,7 +276,8 @@ namespace Goods.Service
             catch (Exception exp)
             {
                 LogWriter.WebError(exp);
-                result.code = -108;
+                result.code = -1;
+                result.message = "服务已断开，请稍后重试！";
                 result.data = false;
             }
             return result;
@@ -278,8 +356,19 @@ namespace Goods.Service
         }
         #endregion
 
-        #region 公共方法
-
+        #region 私有方法
+        private string GetVersionFilePath()
+        {
+            try
+            {
+                string versionFilePath = ConfigurationManager.AppSettings["AppVersionFilePath"];
+                return versionFilePath;
+            }
+            catch (Exception ex)
+            {
+                return @"C:\AppVersion.txt";
+            }
+        }
         #endregion
 
     }
