@@ -181,6 +181,7 @@ namespace Goods.Service
                         userid = strCode,
                         nickname = strCode,
                         password = password,
+                        usertype = 0,
                         registertime = DateTime.Now,
                     };
                     GoodsDb.Users.Add(tempUser);
@@ -192,6 +193,93 @@ namespace Goods.Service
                     }
                     result.code = 1;
                     result.data = tempUser;
+                }
+            }
+            catch (Exception exp)
+            {
+                result.code = -1;
+                result.message = "服务已断开，请稍后重试！";
+                //记录日志
+                LogWriter.WebError(exp);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取用户信息
+        /// </summary>
+        /// <param name="curPage">当前页</param>
+        /// <param name="pageSize">每页个数</param>
+        /// <param name="type">用户类型 0-普通用户、游客 1-VIP用户 2-SVIP用户 
+        /// 3-特约用户（可发布商品） 4-管理员 5-超级管理员 9-全部</param>
+        /// <param name="filter">查询条件</param>
+        /// <returns></returns>
+        public ReturnResult<List<Users>> GetUserInfos(int curPage, int pageSize, int type, string filter)
+        {
+            ReturnResult<List<Users>> result = new ReturnResult<List<Users>>();
+            using (GoodsEntities GoodsDb = new GoodsEntities())
+            {
+                try
+                {
+                    //查寻用户
+                    result.data = (from user in GoodsDb.Users
+                                   where (filter == "" ||user.userid.Contains(filter)) 
+                                   && (user.usertype == type || (type == 9 && user.usertype != 5))
+                                   orderby user.registertime descending
+                                   select user).Skip(curPage * pageSize).Take(pageSize).ToList();
+                }
+                catch (Exception exp)
+                {
+                    LogWriter.WebError(exp);
+                    result.code = -1;
+                    result.message = "服务已断开，请稍后重试！";
+                    return result;
+                }
+                result.code = 1;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 更新用户信息
+        /// </summary>
+        /// <param name="userInfo">待更新用户信息</param>
+        /// <returns></returns>
+        public ReturnResult<bool> SaveUserInfo(Users userInfo)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+
+            try
+            {
+                using (GoodsEntities GoodsDb = new GoodsEntities())
+                {
+                    //验证用户
+                    Users updateUser = (from user in GoodsDb.Users
+                                 where user.id == userInfo.id
+                                 select user).FirstOrDefault();
+                    updateUser.userlevel = userInfo.userlevel;
+                    updateUser.nickname = userInfo.nickname;
+                    updateUser.phonenumber = userInfo.phonenumber;
+                    updateUser.qq = userInfo.qq;
+                    updateUser.realname = userInfo.realname;
+                    updateUser.sina = userInfo.sina;
+                    updateUser.taobao = userInfo.taobao;
+                    updateUser.usertype = userInfo.usertype;
+                    updateUser.wechat = userInfo.wechat;
+                    updateUser.birth = userInfo.birth;
+                    updateUser.idcard = userInfo.idcard;
+
+                    if(GoodsDb.SaveChanges()<= 0)
+                    {
+                        result.code = -1;
+                        result.message = "没有数据更新！";
+                    }
+                    else
+                    {
+                        result.code = 1;
+                        result.data = true; ;
+                    }
                 }
             }
             catch (Exception exp)
