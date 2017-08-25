@@ -9,11 +9,17 @@ using Goods.Core;
 using System.IO;
 using System.Drawing;
 using System.Configuration;
+using System.Text;
+using System.Security.Cryptography;
 
 namespace Goods.Service
 {
     public class BaseInfoService : IBaseInfoService
     {
+        #region 私有变量
+        private string timeStyle = "yyyyMMddHHmmss";
+        #endregion
+
         #region 构造函数
         public BaseInfoService()
         {
@@ -117,26 +123,28 @@ namespace Goods.Service
                     //验证用户
                     var query = (from user in GoodsDb.Users
                                  where user.userid == strCode
-                                 select user).ToList();
-                    if (query == null || query.Count == 0)
+                                 select user).FirstOrDefault();
+                    if (query == null)
                     {
                         result.code = -102;
                         result.message = "您输入的用户名不存在！";
                         return result;
                     }
-                    //匹配密码
-                    query = (from user in GoodsDb.Users
-                             where user.userid == strCode && user.password == password
-                             select user).ToList();
-                    if (query == null || query.Count == 0)
+                    else
                     {
-                        result.code = -103;
-                        result.message = "您输入的密码错误！";
-                        return result;
+                        if(EncryptDES(password, (query.registertime??DateTime.Now)
+                            .ToString(timeStyle)) != query.password)
+                        {
+                            result.code = -103;
+                            result.message = "您输入的密码错误！";
+                            return result;
+                        }
+                        else
+                        {
+                            result.code = 1;
+                            result.data = query;
+                        }
                     }
-                    result.code = 1;
-                    result.data = query.FirstOrDefault();
-                    //result.data.passWord = "";//不需要返回密码
                 }
             }
             catch (Exception exp)
@@ -154,7 +162,7 @@ namespace Goods.Service
         /// 注册用户
         /// </summary>
         /// <param name="strCode">用户名</param>
-        /// <param name="password">用户密码(暂未加密)</param>
+        /// <param name="password">用户密码</param>
         /// <returns></returns>
         public ReturnResult<Users> RegisterUserInfo(string strCode, string password)
         {
@@ -174,15 +182,16 @@ namespace Goods.Service
                         result.message = "无法注册，用户名已存在！";
                         return result;
                     }
+                    DateTime now = DateTime.Now;
                     //新增用户
                     Users tempUser = new Users
                     {
                         id = Guid.NewGuid().ToString(),
                         userid = strCode,
                         nickname = strCode,
-                        password = password,
+                        password = EncryptDES(password, now.ToString(timeStyle)),
                         usertype = 0,
-                        registertime = DateTime.Now,
+                        registertime = now,
                     };
                     GoodsDb.Users.Add(tempUser);
                     if (GoodsDb.SaveChanges() <= 0)
@@ -292,6 +301,60 @@ namespace Goods.Service
 
             return result;
         }
+        /// <summary>
+        /// 用户修改密码
+        /// </summary>
+        /// <param name="id">用户主键</param>
+        /// <param name="oldPassword">旧密码</param>
+        /// <param name="newPassword">新密码</param>
+        /// <returns></returns>
+        public ReturnResult<bool> ChangePassword(string id, string oldPassword, string newPassword)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+
+            try
+            {
+                using (GoodsEntities goodsDb = new GoodsEntities())
+                {
+                    var user = (from u in goodsDb.Users
+                                 where u.id == id
+                                 select u).FirstOrDefault();
+                    oldPassword = EncryptDES(oldPassword, (user.registertime ?? DateTime.Now)
+                        .ToString(timeStyle));
+                    LogWriter.WebLog("oldPassword:" + oldPassword);
+                    if(user.password == oldPassword)
+                    {
+                        newPassword = EncryptDES(newPassword, (user.registertime ?? DateTime.Now)
+                            .ToString(timeStyle));
+                        LogWriter.WebLog("newPassword:" + newPassword);
+                        user.password = newPassword;
+                        if(goodsDb.SaveChanges() <= 0)
+                        {
+                            result.code = -110;
+                            result.message = "用户密码更新失败！";
+                           
+                        }
+                        result.code = 1;
+                        result.data = true;
+                    }
+                    else
+                    {
+                        result.code = -109;
+                        result.message = "用户原密码错误！";
+                    }
+                };
+            }
+            catch (Exception exp)
+            {
+                //记录日志
+                LogWriter.WebError(exp);
+                result.code = -1;
+                result.message = "服务已断开，请稍后重试！";
+            }
+
+            return result;
+        }
+
         #endregion
 
         #region 商品相关
@@ -505,6 +568,62 @@ namespace Goods.Service
                 return @"C:\AppVersion.txt";
             }
         }
+
+        #region 加密相关
+        //默认密钥向量
+        private byte[] Keys = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };
+        /// <summary>
+        /// DES加密字符串
+        /// </summary>
+        /// <param name="encryptString">待加密的字符串</param>
+        /// <param name="encryptKey">加密密钥,要求为8位</param>
+        /// <returns>加密成功返回加密后的字符串，失败返回源串</returns>
+        private string EncryptDES(string encryptString, string encryptKey)
+        {
+            try
+            {
+                byte[] rgbKey = Encoding.UTF8.GetBytes(encryptKey.Substring(0, 8));
+                byte[] rgbIV = Keys;
+                byte[] inputByteArray = Encoding.UTF8.GetBytes(encryptString);
+                DESCryptoServiceProvider dCSP = new DESCryptoServiceProvider();
+                MemoryStream mStream = new MemoryStream();
+                CryptoStream cStream = new CryptoStream(mStream, dCSP.CreateEncryptor(rgbKey, rgbIV), CryptoStreamMode.Write);
+                cStream.Write(inputByteArray, 0, inputByteArray.Length);
+                cStream.FlushFinalBlock();
+                return Convert.ToBase64String(mStream.ToArray());
+            }
+            catch
+            {
+                return encryptString;
+            }
+        }
+        /// <summary>
+        /// DES解密字符串
+        /// </summary>
+        /// <param name="decryptString">待解密的字符串</param>
+        /// <param name="decryptKey">解密密钥,要求为8位,和加密密钥相同</param>
+        /// <returns>解密成功返回解密后的字符串，失败返源串</returns>
+        private string DecryptDES(string decryptString, string decryptKey)
+        {
+            try
+            {
+                byte[] rgbKey = Encoding.UTF8.GetBytes(decryptKey);
+                byte[] rgbIV = Keys;
+                byte[] inputByteArray = Convert.FromBase64String(decryptString);
+                DESCryptoServiceProvider DCSP = new DESCryptoServiceProvider();
+                MemoryStream mStream = new MemoryStream();
+                CryptoStream cStream = new CryptoStream(mStream, DCSP.CreateDecryptor(rgbKey, rgbIV), CryptoStreamMode.Write);
+                cStream.Write(inputByteArray, 0, inputByteArray.Length);
+                cStream.FlushFinalBlock();
+                return Encoding.UTF8.GetString(mStream.ToArray());
+            }
+            catch
+            {
+                return decryptString;
+            }
+        }
+
+        #endregion
         #endregion
 
     }
