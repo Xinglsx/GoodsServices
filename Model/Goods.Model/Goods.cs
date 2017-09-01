@@ -11,7 +11,7 @@ namespace Goods.Model
         [StringLength(36)]
         public string id { get; set; }
 
-        [StringLength(50)]
+        [StringLength(500)]
         public string description { get; set; }
 
         [StringLength(500)]

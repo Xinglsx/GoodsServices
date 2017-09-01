@@ -13,6 +13,7 @@ namespace Goods.Model
         }
 
         public virtual DbSet<Goods> Goods { get; set; }
+        public virtual DbSet<Questions> Questions { get; set; }
         public virtual DbSet<Userloginrecord> Userloginrecord { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
@@ -68,6 +69,26 @@ namespace Goods.Model
 
             modelBuilder.Entity<Goods>()
                 .Property(e => e.buyimage)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Questions>()
+                .Property(e => e.id)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Questions>()
+                .Property(e => e.feedbackuserid)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Questions>()
+                .Property(e => e.feedbackusernickname)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Questions>()
+                .Property(e => e.contact)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Questions>()
+                .Property(e => e.content)
                 .IsUnicode(false);
 
             modelBuilder.Entity<Userloginrecord>()

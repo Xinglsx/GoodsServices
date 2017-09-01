@@ -14,7 +14,7 @@ namespace Goods.Model
         [StringLength(20)]
         public string userid { get; set; }
 
-        [StringLength(20)]
+        [StringLength(36)]
         public string password { get; set; }
 
         [StringLength(20)]

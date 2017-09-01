@@ -92,6 +92,17 @@ namespace Goods.ServiceConstract
             BodyStyle = WebMessageBodyStyle.WrappedRequest)]
         [Description("用户修改密码。")]
         ReturnResult<bool> ChangePassword(string id, string oldPassword, string newPassword);
+        /// <summary>
+        /// 保存用户反馈信息
+        /// </summary>
+        /// <param name="userInfo">用户反馈信息</param>
+        /// <returns></returns>
+        [OperationContract]
+        [WebInvoke(UriTemplate = "UserInfo/SaveQuestion", Method = "POST",
+            RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json,
+            BodyStyle = WebMessageBodyStyle.WrappedRequest)]
+        [Description("保存用户反馈信息。")]
+        ReturnResult<bool> SaveQuestion(Questions questionInfo);
         #endregion
 
         #region 商品相关

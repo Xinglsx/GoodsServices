@@ -278,11 +278,12 @@ namespace Goods.Service
                     updateUser.wechat = userInfo.wechat;
                     updateUser.birth = userInfo.birth;
                     updateUser.idcard = userInfo.idcard;
+                    updateUser.usersignature = userInfo.usersignature;
 
                     if(GoodsDb.SaveChanges()<= 0)
                     {
-                        result.code = -1;
-                        result.message = "没有数据更新！";
+                        result.code = -111;
+                        result.message = "信息无更新！";
                     }
                     else
                     {
@@ -355,6 +356,49 @@ namespace Goods.Service
             return result;
         }
 
+        /// <summary>
+        /// 保存用户反馈信息
+        /// </summary>
+        /// <param name="userInfo">用户反馈信息</param>
+        /// <returns></returns>
+        public ReturnResult<bool> SaveQuestion(Questions questionInfo)
+        {
+            ReturnResult<bool> result = new ReturnResult<bool>();
+
+            try
+            {
+                using (GoodsEntities GoodsDb = new GoodsEntities())
+                {
+                    //验证用户
+                    if(string.IsNullOrEmpty(questionInfo.id))
+                    {
+                        questionInfo.id = Guid.NewGuid().ToString();
+                    }
+                    questionInfo.feedbacktime = DateTime.Now;
+                    GoodsDb.Questions.Add(questionInfo);
+
+                    if (GoodsDb.SaveChanges() <= 0)
+                    {
+                        result.code = -112;
+                        result.message = "问题反馈信息无更新！";
+                    }
+                    else
+                    {
+                        result.code = 1;
+                        result.data = true; ;
+                    }
+                }
+            }
+            catch (Exception exp)
+            {
+                result.code = -1;
+                result.message = "服务已断开，请稍后重试！";
+                //记录日志
+                LogWriter.WebError(exp);
+            }
+
+            return result;
+        }
         #endregion
 
         #region 商品相关
@@ -394,7 +438,7 @@ namespace Goods.Service
                     var query = (from goods in GoodsDb.Goods
                                  where states.Contains(goods.state ?? 0)
                                  orderby goods.recommendtime descending
-                                 select goods).Skip(curPage * pageSize).Take(pageSize);
+                                 select goods).Skip(curPage * pageSize).Take(pageSize).OrderByDescending(p => p.recommendtime);
                     List<Goods.Model.Goods> tempResult = query.ToList();
                     if (tempResult == null || tempResult.Count == 0)
                     {
