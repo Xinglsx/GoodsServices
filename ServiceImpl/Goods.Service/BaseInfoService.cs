@@ -408,6 +408,7 @@ namespace Goods.Service
         /// <param name="curPage">获取第几页 默认从0开始</param>
         /// <param name="pageSize">每页个数</param>
         /// <param name="type">0-保存草稿 1-待审核 2-已审核 9-全部 10-保存草稿+待审核</param>
+        ///  310-保存草稿+待审核+拒绝
         /// <returns></returns>
         public ReturnResult<List<Model.Goods>> GetGoodsList(int curPage, int pageSize,int type)
         {
@@ -422,6 +423,12 @@ namespace Goods.Service
                 states.Add(0);
                 states.Add(1);
                 states.Add(2);
+                states.Add(3);
+            }
+            else if(type == 310)
+            {
+                states.Add(0);
+                states.Add(1);
                 states.Add(3);
             }
             else
@@ -489,6 +496,7 @@ namespace Goods.Service
                         goodsInfo.id = Guid.NewGuid().ToString();
                         goodsInfo.image = ImageUtil.StrToUri(goodsInfo.image, goodsInfo.id + ".jpg");
                         goodsInfo.buyimage = ImageUtil.StrToUri(goodsInfo.buyimage, goodsInfo.id + "_buy.jpg");
+                        goodsInfo.recommendtime = DateTime.Now;
                         GoodsDb.Goods.Add(goodsInfo);
                     }
                     else
