@@ -12,6 +12,7 @@ namespace Goods.Model
         {
         }
 
+        public virtual DbSet<Advertisements> Advertisements { get; set; }
         public virtual DbSet<Goods> Goods { get; set; }
         public virtual DbSet<Questions> Questions { get; set; }
         public virtual DbSet<Userloginrecord> Userloginrecord { get; set; }
@@ -19,6 +20,26 @@ namespace Goods.Model
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Advertisements>()
+                .Property(e => e.id)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Advertisements>()
+                .Property(e => e.key)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Advertisements>()
+                .Property(e => e.img)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Advertisements>()
+                .Property(e => e.content)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Advertisements>()
+                .Property(e => e.goodskey)
+                .IsUnicode(false);
+
             modelBuilder.Entity<Goods>()
                 .Property(e => e.id)
                 .IsUnicode(false);

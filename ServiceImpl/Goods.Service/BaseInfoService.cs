@@ -607,6 +607,65 @@ namespace Goods.Service
         }
         #endregion
 
+        #region 广告相关
+
+        /// <summary>
+        /// 获取广告信息
+        /// </summary>
+        /// <param name="key">广告关键字</param>
+        /// <returns></returns>
+        public ReturnResult<AdInfo> GetAdvertisement(string key)
+        {
+            ReturnResult<AdInfo> result = new ReturnResult<AdInfo>();
+            try
+            {
+                using (GoodsEntities GoodsDb = new GoodsEntities())
+                {
+                    var query = (from ad in GoodsDb.Advertisements
+                                 where ad.key == key && ad.state == 1
+                                 select ad).FirstOrDefault();
+                    if(query == null)
+                    {
+                        result.code = -113;
+                        result.message = "无可用的广告跳转！";
+                    }
+                    else
+                    {
+                        result.data = new AdInfo();
+                        result.data.adInfo = query;
+                        //result.data.goodsInfo = new Model.Goods();
+                        //商品类信息要再获取商品信息
+                        if (query.type == 2)
+                        {
+                            var query1 = (from goods in GoodsDb.Goods
+                                         where goods.id == query.goodskey && goods.state == 2
+                                         select goods).FirstOrDefault();
+                            if (query1 == null)
+                            {
+                                result.code = -114;
+                                result.message = "无已审核的商品信息！";
+                            }
+                            else
+                            {
+                                result.data.goodsInfo = query1;
+                                result.code = 1;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception exp)
+            {
+                result.code = -1;
+                result.message = "服务已断开，请稍后重试！";
+                //记录日志
+                LogWriter.WebError(exp);
+            }
+
+            return result;
+        }
+        #endregion
+
         #region 私有方法
         private string GetVersionFilePath()
         {

@@ -157,5 +157,20 @@ namespace Goods.ServiceConstract
         ReturnResult<bool> ClickCounIncrement(string goodsId);
         #endregion
 
+        #region 广告相关
+
+        /// <summary>
+        /// 获取广告信息
+        /// </summary>
+        /// <param name="key">广告关键字</param>
+        /// <returns></returns>
+        [OperationContract]
+        [WebInvoke(UriTemplate = "Advertisement/GetAdvertisement?key={key}",
+            Method = "GET", RequestFormat = WebMessageFormat.Json,
+            ResponseFormat = WebMessageFormat.Json)]
+        [Description("获取广告信息")]
+        ReturnResult<AdInfo> GetAdvertisement(string key);
+        #endregion
+
     }
 }
