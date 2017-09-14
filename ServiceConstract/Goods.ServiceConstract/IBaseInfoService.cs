@@ -113,13 +113,14 @@ namespace Goods.ServiceConstract
         /// <param name="curPage">获取第几页 默认从0开始</param>
         /// <param name="pageSize">每页个数</param>
         /// <param name="type">获取类型</param>
+        /// <param name="filter">查询条件</param>
         /// <returns></returns>
         [OperationContract]
-        [WebInvoke(UriTemplate = "Goods/GetGoodsList?curPage={curPage}&pageSize={pageSize}&type={type}", 
+        [WebInvoke(UriTemplate = "Goods/GetGoodsList?curPage={curPage}&pageSize={pageSize}&type={type}&filter={filter}", 
             Method = "GET", RequestFormat = WebMessageFormat.Json,
             ResponseFormat = WebMessageFormat.Json)]
         [Description("获取商品列表。")]
-        ReturnResult<List<Model.Goods>> GetGoodsList(int curPage,int pageSize, int type);
+        ReturnResult<List<Model.Goods>> GetGoodsList(int curPage,int pageSize, int type,string filter);
 
         /// <summary>
         /// 保存商品信息

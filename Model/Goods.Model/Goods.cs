@@ -24,6 +24,8 @@ namespace Goods.Model
         public string command { get; set; }
 
         [StringLength(36)]
+        public string oldprice { get; set; }
+        [StringLength(36)]
         public string price { get; set; }
 
         public DateTime? expirydate { get; set; }

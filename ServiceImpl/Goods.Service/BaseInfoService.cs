@@ -408,9 +408,10 @@ namespace Goods.Service
         /// <param name="curPage">获取第几页 默认从0开始</param>
         /// <param name="pageSize">每页个数</param>
         /// <param name="type">0-保存草稿 1-待审核 2-已审核 9-全部 10-保存草稿+待审核</param>
-        ///  310-保存草稿+待审核+拒绝
+        ///  310-保存草稿+待审核+拒绝        
+        /// <param name="filter">查询条件</param>
         /// <returns></returns>
-        public ReturnResult<List<Model.Goods>> GetGoodsList(int curPage, int pageSize,int type)
+        public ReturnResult<List<Model.Goods>> GetGoodsList(int curPage, int pageSize,int type, string filter)
         {
             List<int> states = new List<int>();
             if (type == 10)
@@ -435,6 +436,7 @@ namespace Goods.Service
             {
                 states.Add(type);
             }
+            if (string.IsNullOrEmpty(filter)) { filter = string.Empty; }
 
             if (pageSize <= 0) pageSize = 10;//默认取10条
             ReturnResult<List<Model.Goods>> result = new ReturnResult<List<Model.Goods>>();
@@ -443,9 +445,11 @@ namespace Goods.Service
                 using (GoodsEntities GoodsDb = new GoodsEntities())
                 {
                     var query = (from goods in GoodsDb.Goods
-                                 where states.Contains(goods.state ?? 0)
+                                 where states.Contains(goods.state ?? 0) 
+                                 && (filter == string.Empty || goods.description.Contains(filter))
                                  orderby goods.recommendtime descending
-                                 select goods).Skip(curPage * pageSize).Take(pageSize).OrderByDescending(p => p.recommendtime);
+                                 select goods).Skip(curPage * pageSize).Take(pageSize)
+                                 .OrderByDescending(p => p.recommendtime);
                     List<Goods.Model.Goods> tempResult = query.ToList();
                     if (tempResult == null || tempResult.Count == 0)
                     {

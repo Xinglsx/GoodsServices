@@ -61,6 +61,10 @@ namespace Goods.Model
                 .IsUnicode(false);
 
             modelBuilder.Entity<Goods>()
+                .Property(e => e.oldprice)
+                .IsUnicode(false);
+
+            modelBuilder.Entity<Goods>()
                 .Property(e => e.price)
                 .IsUnicode(false);
 
