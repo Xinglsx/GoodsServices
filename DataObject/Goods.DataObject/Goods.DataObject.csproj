@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdInfo.cs" />
+    <Compile Include="CouponInfo.cs" />
     <Compile Include="ReturnResult.cs" />
     <Compile Include="UserInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

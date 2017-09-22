@@ -11,6 +11,11 @@ using System.Drawing;
 using System.Configuration;
 using System.Text;
 using System.Security.Cryptography;
+using Top.Api;
+using Top.Api.Request;
+using Top.Api.Response;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace Goods.Service
 {
@@ -670,6 +675,121 @@ namespace Goods.Service
         }
         #endregion
 
+        #region 淘宝接口
+        /// <summary>
+        /// 获取淘宝客粉丝优惠券列表
+        /// </summary>
+        /// <param name="pageNo">当前页</param>
+        /// <param name="pageSize">每页数量</param>
+        /// <param name="q">查询条件</param>
+        /// <returns></returns>
+        public ReturnResult<List<CouponInfo>> GetCouponList(long pageNo, long pageSize, string q)
+        {
+            ReturnResult<List<CouponInfo>> result = new ReturnResult<List<CouponInfo>>();
+            List<CouponInfo> data = new List<CouponInfo>();
+
+
+            if (pageNo == null) { pageNo = 1; }
+            if(pageSize == null) { pageSize = 24; }
+
+            string url = "http://gw.api.taobao.com/router/rest";
+            string appkey = "24621990";
+            string format = "json";
+            ITopClient client = new DefaultTopClient(url, appkey, appsecret, format);
+            TbkDgItemCouponGetRequest req = new TbkDgItemCouponGetRequest();
+            req.AdzoneId = 132798493L;
+            req.Q = q;
+            req.PageNo = pageNo;
+            req.PageSize = pageSize;
+            req.Platform = 2;
+            TbkDgItemCouponGetResponse response = client.Execute(req);
+            
+            JObject jsonObj = JObject.Parse(response.Body);
+            string coupons;
+            try
+            {
+                coupons = jsonObj["tbk_dg_item_coupon_get_response"]["results"]["tbk_coupon"].ToString();
+            }
+            catch
+            {
+                result.code = -116;
+                result.message = "没有相关粉丝福利券！";
+                return result;
+            }
+            
+            JArray jar = JArray.Parse(coupons);
+            foreach(var temp in jar)
+            {
+                data.Add(
+                    new CouponInfo
+                    {
+                        category = temp["category"].ToString(),
+                        commission_rate = temp["commission_rate"].ToString(),
+                        coupon_click_url = temp["coupon_click_url"].ToString(),
+                        coupon_end_time = temp["coupon_end_time"].ToString(),
+                        coupon_info = temp["coupon_info"].ToString(),
+                        coupon_remain_count = temp["coupon_remain_count"].ToString(),
+                        coupon_start_time = temp["coupon_start_time"].ToString(),
+                        coupon_total_count = temp["coupon_total_count"].ToString(),
+                        item_description = temp["item_description"].ToString(),
+                        item_url = temp["item_url"].ToString(),
+                        nick = temp["nick"].ToString(),
+                        num_iid = temp["num_iid"].ToString(),
+                        pict_url = temp["pict_url"].ToString(),
+                        seller_id = temp["seller_id"].ToString(),
+                        shop_title = temp["shop_title"].ToString(),
+                        //small_images = temp.Contains("category") ? Convert.ToInt32(temp["category"]) : 1,
+                        title = temp["title"].ToString(),
+                        user_type = temp["user_type"].ToString(),
+                        volume = temp["volume"].ToString(),
+                        zk_final_price = temp["zk_final_price"].ToString(),
+                    }
+                    );
+            }
+
+            result.code = 1;
+            result.data = data;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 创建淘口令
+        /// </summary>
+        /// <param name="text">界面显示文字</param>
+        /// <param name="url">需要转换的URL</param>
+        /// <param name="logo">界面显示的图片</param>
+        /// <returns></returns>
+        public ReturnResult<string> CreateTpwd(string text, string url, string logo)
+        {
+            ReturnResult<string> result = new ReturnResult<string>();
+
+            string urlVisit = "http://gw.api.taobao.com/router/rest";
+            string appkey = "24621990";
+            string format = "json";
+            ITopClient client = new DefaultTopClient(urlVisit, appkey, appsecret, format);
+            TbkTpwdCreateRequest req = new TbkTpwdCreateRequest();
+            req.Logo = logo;
+            req.Text = "【闪荐福利券】" + text;
+            req.Url = url;
+            req.UserId = "28771534";
+            TbkTpwdCreateResponse response = client.Execute(req);
+
+            if(response == null)
+            {
+                result.code = -118;
+                result.message = "淘宝口令生成失败";
+            }
+            else
+            {
+                result.code = 1;
+                result.message = response.Body;
+                return result;
+            }
+            return result;
+        }
+        #endregion
+
         #region 私有方法
         private string GetVersionFilePath()
         {
@@ -683,7 +803,7 @@ namespace Goods.Service
                 return @"C:\AppVersion.txt";
             }
         }
-
+        
         #region 加密相关
         //默认密钥向量
         private byte[] Keys = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };

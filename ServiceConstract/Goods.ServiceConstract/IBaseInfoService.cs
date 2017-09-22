@@ -173,5 +173,32 @@ namespace Goods.ServiceConstract
         ReturnResult<AdInfo> GetAdvertisement(string key);
         #endregion
 
+        #region 淘宝接口
+        /// <summary>
+        /// 获取淘宝客粉丝优惠券列表
+        /// </summary>
+        /// <param name="pageNo">当前页</param>
+        /// <param name="pageSize">每页数量</param>
+        /// <param name="q">查询条件</param>
+        /// <returns></returns>
+        [OperationContract]
+        [WebInvoke(UriTemplate = "Tbk/GetCouponList?pageNo={pageNo}&pageSize={pageSize}&q={q}",
+            Method = "GET", RequestFormat = WebMessageFormat.Json,
+            ResponseFormat = WebMessageFormat.Json)]
+        [Description("获取淘宝客粉丝优惠券列表。")]
+        ReturnResult<List<CouponInfo>> GetCouponList(long pageNo, long pageSize, string q);
+        /// <summary>
+        /// 创建淘口令
+        /// </summary>
+        /// <param name="text">界面显示文字</param>
+        /// <param name="url">需要转换的URL</param>
+        /// <param name="logo">界面显示的图片</param>
+        /// <returns></returns>
+        [WebInvoke(UriTemplate = "Tbk/CreateTpwd?text={text}&url={url}&logo={logo}",
+            Method = "GET", RequestFormat = WebMessageFormat.Json,
+            ResponseFormat = WebMessageFormat.Json)]
+        [Description("创建淘口令。")]
+        ReturnResult<string> CreateTpwd(string text, string url, string logo);
+        #endregion
     }
 }
